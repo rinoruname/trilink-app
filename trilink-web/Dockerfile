@@ -1,9 +1,19 @@
 # Build stage
 FROM node:18-alpine AS builder
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
 RUN npm install
+
+# Copy source
 COPY . .
+
+# Force Next.js to use localhost for assets during build
+ENV NEXT_PUBLIC_ASSET_PREFIX=http://localhost
+ENV NEXT_PUBLIC_API_URL=http://localhost:4000
+
+# Build the application
 RUN npm run build
 
 # Production stage
