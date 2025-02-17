@@ -24,7 +24,7 @@ jobs:
 
       - name: Docker login
         run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_PAT }}
-
+#comment
       - name: Publish image
         run: |
           docker tag rinoruname/trilink-web:${{ env.IMAGE_TAG }} rinoruname/trilink-web:latest
