@@ -1,0 +1,38 @@
+name: Validate Trilink Web
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'trilink-web/**'
+      - '.github/workflows/validate-trilink-web-build.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: trilink-web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./trilink-web
+        run: npm ci
+
+      - name: Run linting
+        working-directory: ./trilink-web
+        run: npm run lint
+
+      - name: Build Next.js
+        working-directory: ./trilink-web
+        run: npm run build
+
+      - name: Build image
+        run: docker build . --file Dockerfile --tag rinoruname/trilink-web:latest
+        working-directory: trilink-web 

@@ -1,0 +1,32 @@
+name: Build and Push Trilink Web
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'trilink-web/**'
+      - '.github/workflows/build-trilink-web.yml'
+  workflow_dispatch:
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build . --file Dockerfile --tag rinoruname/trilink-web:${{ env.IMAGE_TAG }}
+        working-directory: trilink-web
+
+      - name: Docker login
+        run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_PAT }}
+
+      - name: Publish image
+        run: |
+          docker tag rinoruname/trilink-web:${{ env.IMAGE_TAG }} rinoruname/trilink-web:latest
+          docker push rinoruname/trilink-web:${{ env.IMAGE_TAG }}
+          docker push rinoruname/trilink-web:latest 

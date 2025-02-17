@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.transitionHover {
+  display: inline-block;
+  overflow: hidden;
+}
+
+.transitionHover img {
+  display: block;
+  -moz-transition: all 1s;
+  -webkit-transition: all 1s;
+  transition: all 1s;
+}
+
+.transitionHover:hover img {
+  -moz-transform: scale(1.1);
+  -webkit-transform: scale(1.1);
+  transform: scale(1.1);
+}

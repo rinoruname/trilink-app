@@ -1,0 +1,38 @@
+name: Validate Trilink API
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'trilink-api/**'
+      - '.github/workflows/validate-trilink-api-build.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: trilink-api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./trilink-api
+        run: npm ci
+
+      - name: Run linting
+        working-directory: ./trilink-api
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: ./trilink-api
+        run: npm test
+
+      - name: Build image
+        run: docker build . --file Dockerfile --tag rinoruname/trilink-api:latest
+        working-directory: trilink-api 
