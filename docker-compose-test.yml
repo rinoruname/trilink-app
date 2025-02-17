@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123@123
+      - POSTGRES_DB=trilink_db
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./trilink-api/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: ["postgres", "-c", "log_statement=all"]
+    networks:
+      - app-network
+
+  trilink-api:
+    image: rinoruname/trilink-api:latest
+    ports:
+      - "4000:4000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123@123
+      - POSTGRES_DB=trilink_db
+      - POSTGRES_PORT=5432
+      - PORT=4000
+      - ENV=local
+      - RUNS_ON=local
+      - CORS_ORIGIN=http://localhost:3000
+      - TYPEORM_SYNCHRONIZE=false
+      - TYPEORM_LOGGING=true
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/blogs || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-network
+
+  trilink-web:
+    image: rinoruname/trilink-web:latest
+    ports:
+      - "80:80"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - API_URL=http://trilink-api:4000
+      - ENV=local
+      - NODE_ENV=development
+    depends_on:
+      trilink-api:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  postgres_data: 
+
+networks:
+  app-network:
+    driver: bridge 
