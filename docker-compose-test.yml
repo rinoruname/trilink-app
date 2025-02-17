@@ -53,6 +53,11 @@ services:
 
   trilink-web:
     image: rinoruname/trilink-web:latest
+    build:
+      context: ./trilink-web
+      dockerfile: Dockerfile
+      args:
+        - ENV=local
     ports:
       - "80:80"
     environment:
@@ -60,7 +65,6 @@ services:
       - API_URL=http://trilink-api:4000
       - ENV=local
       - NODE_ENV=development
-      - NEXT_PUBLIC_ASSET_PREFIX=http://localhost
     depends_on:
       trilink-api:
         condition: service_healthy
