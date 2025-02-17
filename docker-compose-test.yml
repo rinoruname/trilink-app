@@ -53,11 +53,6 @@ services:
 
   trilink-web:
     image: rinoruname/trilink-web:latest
-    build:
-      context: ./trilink-web
-      dockerfile: Dockerfile
-      args:
-        - ENV=local
     ports:
       - "80:80"
     environment:
