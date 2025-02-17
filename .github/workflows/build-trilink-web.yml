@@ -24,17 +24,24 @@ jobs:
 
       - name: Verify image
         run: |
-          docker-compose up -d
+          docker network create app-network || true
+          docker run -d --name trilink-web --network app-network \
+            -p 80:80 \
+            -e NEXT_PUBLIC_API_URL=http://localhost:4000 \
+            -e API_URL=http://trilink-api:4000 \
+            -e ENV=local \
+            rinoruname/trilink-web:${{ env.IMAGE_TAG }}
+
           echo "Waiting for Web to start..."
           timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do sleep 5; done' || false
           echo "Web is up and running!"
 
       - name: Docker login
-        if: success()  # Only login and push if verification passed
+        if: success()
         run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_PAT }}
 
       - name: Publish image
-        if: success()  # Only push if everything passed
+        if: success()
         run: |
           docker tag rinoruname/trilink-web:${{ env.IMAGE_TAG }} rinoruname/trilink-web:latest
           docker push rinoruname/trilink-web:${{ env.IMAGE_TAG }}

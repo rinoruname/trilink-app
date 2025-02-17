@@ -32,17 +32,25 @@ jobs:
 
       - name: Verify image
         run: |
-          # Start only postgres first
-          docker-compose up -d postgres
-          
-          # Wait for PostgreSQL to be ready
+          docker network create app-network
+          docker run -d --name postgres --network app-network \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=password123@123 \
+            -e POSTGRES_DB=trilink_db \
+            postgres:15-alpine
+
           echo "Waiting for PostgreSQL..."
-          timeout 30s bash -c 'until docker-compose exec -T postgres pg_isready -U postgres; do sleep 2; done' || false
+          timeout 30s bash -c 'until docker exec postgres pg_isready -U postgres; do sleep 2; done' || false
           echo "PostgreSQL is ready!"
-          
-          # Start API after PostgreSQL is ready
-          docker-compose up -d trilink-api
-          
+
+          docker run -d --name trilink-api --network app-network \
+            -p 4000:4000 \
+            -e POSTGRES_HOST=postgres \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=password123@123 \
+            -e POSTGRES_DB=trilink_db \
+            rinoruname/trilink-api:${{ env.IMAGE_TAG }}
+
           echo "Waiting for API to start..."
           timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:4000/blogs)" != "200" ]]; do sleep 5; done' || false
           echo "API is up and running!"
