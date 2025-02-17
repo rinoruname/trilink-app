@@ -34,5 +34,48 @@ jobs:
         run: npm test
 
       - name: Build image
-        run: docker build . --file Dockerfile --tag rinoruname/trilink-api:latest
-        working-directory: trilink-api 
+        run: |
+          docker build . --file Dockerfile \
+            --tag rinoruname/trilink-api:latest \
+            --build-arg POSTGRES_HOST=postgres \
+            --build-arg POSTGRES_USER=postgres \
+            --build-arg POSTGRES_PASSWORD=password123@123 \
+            --build-arg POSTGRES_DB=trilink_db \
+            --build-arg POSTGRES_PORT=5432 \
+            --build-arg PORT=4000
+        working-directory: trilink-api
+
+      - name: Start PostgreSQL and API
+        run: |
+          # Start only postgres first
+          docker-compose up -d postgres
+          
+          # Wait for PostgreSQL to be ready
+          echo "Waiting for PostgreSQL..."
+          timeout 30s bash -c 'until docker-compose exec -T postgres pg_isready -U postgres; do sleep 2; done' || false
+          echo "PostgreSQL is ready!"
+          
+          # Start API after PostgreSQL is ready
+          docker-compose up -d trilink-api
+
+      - name: Wait for API to be ready
+        run: |
+          echo "Waiting for API to start..."
+          timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:4000/blogs)" != "200" ]]; do sleep 5; done' || false
+          echo "API is up and running!"
+
+      - name: Validate API endpoints
+        run: |
+          # Test blogs endpoint
+          curl -f http://localhost:4000/blogs
+          
+          # Test health endpoint if available
+          curl -f http://localhost:4000/health || true
+
+      - name: Check container logs if validation fails
+        if: failure()
+        run: |
+          echo "API Logs:"
+          docker-compose logs trilink-api
+          echo "Database Logs:"
+          docker-compose logs postgres 
