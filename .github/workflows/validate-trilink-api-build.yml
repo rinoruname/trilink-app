@@ -69,3 +69,5 @@ jobs:
           docker logs trilink-api
           echo "PostgreSQL Logs:"
           docker logs postgres 
+
+#comment
