@@ -22,10 +22,19 @@ jobs:
         run: docker build . --file Dockerfile --tag rinoruname/trilink-web:${{ env.IMAGE_TAG }}
         working-directory: trilink-web
 
+      - name: Verify image
+        run: |
+          docker-compose up -d
+          echo "Waiting for Web to start..."
+          timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do sleep 5; done' || false
+          echo "Web is up and running!"
+
       - name: Docker login
+        if: success()  # Only login and push if verification passed
         run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_PAT }}
 
       - name: Publish image
+        if: success()  # Only push if everything passed
         run: |
           docker tag rinoruname/trilink-web:${{ env.IMAGE_TAG }} rinoruname/trilink-web:latest
           docker push rinoruname/trilink-web:${{ env.IMAGE_TAG }}

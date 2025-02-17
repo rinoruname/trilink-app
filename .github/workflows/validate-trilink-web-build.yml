@@ -35,4 +35,19 @@ jobs:
 
       - name: Build image
         run: docker build . --file Dockerfile --tag rinoruname/trilink-web:latest
-        working-directory: trilink-web 
+        working-directory: trilink-web
+
+      - name: Start containers
+        run: docker-compose up -d
+
+      - name: Wait for Web to be ready
+        run: |
+          echo "Waiting for Web to start..."
+          timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do sleep 5; done' || false
+          echo "Web is up and running!"
+
+      - name: Check container logs if validation fails
+        if: failure()
+        run: |
+          echo "Web Logs:"
+          docker-compose logs trilink-web 
