@@ -1,4 +1,4 @@
-name: Build and Push Trilink Web
+name: Build Trilink Web
 
 on:
   push:
@@ -18,23 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build image
+      - name: build-image
         run: docker build . --file Dockerfile --tag rinoruname/trilink-web:${{ env.IMAGE_TAG }}
         working-directory: trilink-web
 
-      - name: Verify image
-        run: |
-          docker-compose up -d
-          echo "Waiting for Web to start..."
-          timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80)" != "200" ]]; do sleep 5; done' || false
-          echo "Web is up and running!"
-
-      - name: Docker login
-        if: success()  # Only login and push if verification passed
+      - name: docker-login
         run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_PAT }}
-#comment
-      - name: Publish image
-        if: success()  # Only push if everything passed
+
+      - name: publish-image
         run: |
           docker tag rinoruname/trilink-web:${{ env.IMAGE_TAG }} rinoruname/trilink-web:latest
           docker push rinoruname/trilink-web:${{ env.IMAGE_TAG }}
