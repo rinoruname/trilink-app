@@ -1,0 +1,19 @@
+name: Validate Trilink Web
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'trilink-web/**'
+      - '.github/workflows/validate-trilink-web-build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: build-image
+      run: docker build . --file Dockerfile --tag rinoruname/trilink-web:latest
+      working-directory: trilink-web 

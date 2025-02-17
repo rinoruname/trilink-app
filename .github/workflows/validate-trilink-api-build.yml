@@ -1,0 +1,19 @@
+name: Validate Trilink API
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'trilink-api/**'
+      - '.github/workflows/validate-trilink-api-build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: build-image
+      run: docker build . --file Dockerfile --tag rinoruname/trilink-api:latest
+      working-directory: trilink-api 
