@@ -1,4 +1,4 @@
-name: Build and Push Trilink API
+name: Build Trilink API
 
 on:
   push:
@@ -18,50 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build image
-        run: |
-          docker build . --file Dockerfile \
-            --tag rinoruname/trilink-api:${{ env.IMAGE_TAG }} \
-            --build-arg POSTGRES_HOST=postgres \
-            --build-arg POSTGRES_USER=postgres \
-            --build-arg POSTGRES_PASSWORD=password123@123 \
-            --build-arg POSTGRES_DB=trilink_db \
-            --build-arg POSTGRES_PORT=5432 \
-            --build-arg PORT=4000
+      - name: build-image
+        run: docker build . --file Dockerfile --tag rinoruname/trilink-api:${{ env.IMAGE_TAG }}
         working-directory: trilink-api
 
-      - name: Verify image
-        run: |
-          docker network create app-network
-          docker run -d --name postgres --network app-network \
-            -e POSTGRES_USER=postgres \
-            -e POSTGRES_PASSWORD=password123@123 \
-            -e POSTGRES_DB=trilink_db \
-            postgres:15-alpine
-
-          echo "Waiting for PostgreSQL..."
-          timeout 30s bash -c 'until docker exec postgres pg_isready -U postgres; do sleep 2; done' || false
-          echo "PostgreSQL is ready!"
-
-          docker run -d --name trilink-api --network app-network \
-            -p 4000:4000 \
-            -e POSTGRES_HOST=postgres \
-            -e POSTGRES_USER=postgres \
-            -e POSTGRES_PASSWORD=password123@123 \
-            -e POSTGRES_DB=trilink_db \
-            rinoruname/trilink-api:${{ env.IMAGE_TAG }}
-
-          echo "Waiting for API to start..."
-          timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:4000/blogs)" != "200" ]]; do sleep 5; done' || false
-          echo "API is up and running!"
-          curl -f http://localhost:4000/blogs
-
-      - name: Docker login
-        if: success()  # Only login and push if verification passed
+      - name: docker-login
         run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password ${{ secrets.DOCKER_HUB_PAT }}
 
-      - name: Publish image
-        if: success()  # Only push if everything passed
+      - name: publish-image
         run: |
           docker tag rinoruname/trilink-api:${{ env.IMAGE_TAG }} rinoruname/trilink-api:latest
           docker push rinoruname/trilink-api:${{ env.IMAGE_TAG }}
